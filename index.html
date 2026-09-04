@@ -830,26 +830,43 @@
       });
     }
 
-    function pushOnlineScore(name, finalScore, colorKey) {
-      if (!name || finalScore <= 0) return;
+   function pushOnlineScore(name, finalScore, colorKey) {
+  if (!name || finalScore <= 0) return;
 
-      if (isDbConnected && db) {
-        try {
-          const scoresRef = db.ref('zurna_leaderboard');
+  if (isDbConnected && db) {
+    try {
+      const scoresRef = db.ref('zurna_leaderboard');
+
+      // 1. Önce bu isimde bir oyuncu var mı bak
+      scoresRef.orderByChild('name').equalTo(name).once('value', (snapshot) => {
+        if (snapshot.exists()) {
+          // Oyuncu var, eski kaydı bul
+          snapshot.forEach((childSnapshot) => {
+            const existingData = childSnapshot.val();
+            // Eğer yeni skor eskisinden büyükse güncelle
+            if (finalScore > (existingData.score || 0)) {
+              childSnapshot.ref.update({
+                score: finalScore,
+                color: colorKey,
+                timestamp: Date.now()
+              });
+            }
+          });
+        } else {
+          // Oyuncu yoksa yeni kayıt aç
           scoresRef.push({
             name: name,
             score: finalScore,
             color: colorKey,
-            createdAt: Date.now()
+            timestamp: Date.now()
           });
-        } catch (e) {
-          console.error('Online skor gönderme hatası:', e);
-          saveLocalScore(name, finalScore, colorKey);
         }
-      } else {
-        saveLocalScore(name, finalScore, colorKey);
-      }
+      });
+    } catch (e) {
+      console.warn("Online skor push hatası:", e);
     }
+  }
+}
 
     function saveLocalScore(name, score, colorKey) {
       let localScores = JSON.parse(localStorage.getItem('snake_local_scores') || '[]');
