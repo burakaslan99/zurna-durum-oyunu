@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hatay Zurna Dürüm Avcısı - Canlı Online Yılan Oyunu</title>
+  
+  <!-- Firebase SDK (Gerçek Zamanlı Online Veritabanı) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #060608;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #f1f1f1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 14px;
+      touch-action: manipulation;
+      overflow-x: hidden;
+    }
+
+    /* Ana Düzen (Sol: Skor Tablosu, Orta: Oyun Alanı, Sağ: Birinci Ödülü) */
+    .main-wrapper {
+      display: flex;
+      flex-direction: row;
+      gap: 18px;
+      align-items: flex-start;
+      justify-content: center;
+      max-width: 1040px;
+      width: 100%;
+    }
+
+    /* SOL TARAF: SKOR TABLOSU PANELİ */
+    .leaderboard-panel {
+      background: #101015;
+      padding: 18px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+      border: 1px solid #262634;
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .leaderboard-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #242432;
+    }
+
+    .leaderboard-header h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ff7b00;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Canlı Online Durum Rozeti */
+    .online-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(56, 239, 125, 0.1);
+      color: #38ef7d;
+      border: 1px solid rgba(56, 239, 125, 0.3);
+      font-weight: 600;
+    }
+
+    .online-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #38ef7d;
+      box-shadow: 0 0 6px #38ef7d;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .active-user-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 11px;
+      color: #8c8c9e;
+    }
+
+    .player-tag {
+      background: #1f1f2c;
+      color: #e0e0f0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid #323246;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .leaderboard-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      min-height: 180px;
+    }
+
+    .empty-leaderboard {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 30px 10px;
+      color: #747488;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .empty-leaderboard span {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #171720;
+      padding: 8px 11px;
+      border-radius: 9px;
+      border: 1px solid #232330;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .leaderboard-item.current-user {
+      background: rgba(255, 123, 0, 0.12);
+      border-color: #ff7b00;
+      box-shadow: 0 0 10px rgba(255, 123, 0, 0.25);
+    }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .rank-badge {
+      font-size: 13px;
+      font-weight: 800;
+      width: 20px;
+      text-align: center;
+    }
+
+    .rank-1 { color: #ffd700; }
+    .rank-2 { color: #c0c0c0; }
+    .rank-3 { color: #cd7f32; }
+    .rank-other { color: #6a6a7c; font-size: 11px; }
+
+    .item-color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: #e0e0ec;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 105px;
+    }
+
+    .item-score {
+      font-family: monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #38ef7d;
+    }
+
+    .panel-footer {
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .config-server-btn {
+      background: transparent;
+      border: 1px dashed #343446;
+      color: #727288;
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .config-server-btn:hover {
+      border-color: #ff7b00;
+      color: #ff7b00;
+    }
+
+    /* ORTA: OYUN ALANI */
+    .game-container {
+      background: #111116;
+      padding: 16px;
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(255, 96, 0, 0.18), 0 4px 20px rgba(0, 0, 0, 0.85);
+      border: 1px solid #282836;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    .header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .title-box h1 {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, #ff7b00, #ff1a1a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-board {
+      display: flex;
+      gap: 6px;
+    }
+
+    .score-badge {
+      background: #181822;
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1px solid #2c2c3d;
+      text-align: center;
+      min-width: 58px;
+    }
+
+    .score-badge span {
+      display: block;
+      font-size: 8px;
+      color: #8c8c9e;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .score-badge b {
+      font-size: 16px;
+      color: #ff7b00;
+      font-family: monospace;
+    }
+
+    .score-badge.high b {
+      color: #38ef7d;
+    }
+
+    .score-badge.speed b {
+      color: #ffd000;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #282836;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.95);
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      background-color: #07070a;
+      touch-action: none;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(7, 7, 10, 0.94);
+      backdrop-filter: blur(6px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 16px;
+      transition: opacity 0.2s ease;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .overlay h2 {
+      font-size: 23px;
+      color: #ff7b00;
+      margin-bottom: 4px;
+      font-weight: 800;
+      text-shadow: 0 0 16px rgba(255, 123, 0, 0.55);
+    }
+
+    .overlay p {
+      font-size: 13px;
+      color: #b2b2c4;
+      margin-bottom: 12px;
+      text-align: center;
+      max-width: 270px;
+      line-height: 1.35;
+    }
+
+    .nick-input-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      max-width: 220px;
+      margin-bottom: 10px;
+    }
+
+    .nick-input-box label {
+      font-size: 11px;
+      color: #9c9cb4;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nick-input-box input {
+      width: 100%;
+      background: #171722;
+      border: 2px solid #ff7b00;
+      border-radius: 9px;
+      padding: 7px 12px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .nick-input-box input:focus {
+      box-shadow: 0 0 14px rgba(255, 123, 0, 0.6);
+      border-color: #ff9d3b;
+    }
+
+    /* YILAN RENK SEÇİCİ */
+    .color-picker-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 14px;
+      width: 100%;
+    }
+
+    .color-picker-label {
+      font-size: 11px;
+      color: #a0a0b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .color-options {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .color-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #2a2a38;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      outline: none;
+    }
+
+    .color-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .color-btn.active {
+      transform: scale(1.22);
+      border-color: #ffffff;
+      box-shadow: 0 0 12px #ffffff;
+    }
+
+    .color-kirmizi { background: #ff2a4b; }
+    .color-mavi    { background: #00b4d8; }
+    .color-sari    { background: #ffd166; }
+    .color-pembe   { background: #ff70a6; }
+    .color-yesil   { background: #06d6a0; }
+    .color-mor     { background: #b5179e; }
+
+    .btn {
+      background: linear-gradient(135deg, #ff7b00, #e60000);
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 9px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255, 123, 0, 0.45);
+      transition: all 0.2s;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    /* MOBİL D-PAD */
+    .dpad-container {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(2, 52px);
+      gap: 10px;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .dpad-btn {
+      background: #181822;
+      border: 1.5px solid #323246;
+      border-radius: 12px;
+      color: #e0e0f0;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      transition: all 0.1s;
+    }
+
+    .dpad-btn:active {
+      background: #ff7b00;
+      color: #ffffff;
+      border-color: #ff9d3b;
+      transform: scale(0.92);
+      box-shadow: 0 0 14px rgba(255, 123, 0, 0.7);
+    }
+
+    .dpad-up { grid-column: 2; grid-row: 1; }
+    .dpad-left { grid-column: 1; grid-row: 2; }
+    .dpad-down { grid-column: 2; grid-row: 2; }
+    .dpad-right { grid-column: 3; grid-row: 2; }
+
+    .mobile-tip {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #78788e;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .controls-hint {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #626274;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .key-badge {
+      background: #1e1e28;
+      color: #d2d2e4;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 10px;
+      border: 1px solid #343444;
+    }
+
+    /* SAĞ TARAF: BİRİNCİLİK ÖDÜLÜ PANELİ */
+    .reward-panel {
+      background: #101015;
+      padding: 18px;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(255, 170, 0, 0.12), 0 4px 20px rgba(0, 0, 0, 0.8);
+      border: 1px solid #2e281e;
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .reward-header {
+      width: 100%;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #242432;
+    }
+
+    .reward-header h3 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffd166;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-shadow: 0 0 12px rgba(255, 209, 102, 0.45);
+    }
+
+    .reward-header p {
+      font-size: 11px;
+      color: #a0a0b8;
+      margin-top: 3px;
+    }
+
+    .reward-img-container {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid #ff7b00;
+      box-shadow: 0 4px 18px rgba(255, 123, 0, 0.4);
+      margin-bottom: 12px;
+      position: relative;
+      background: #181822;
+    }
+
+    .reward-img {
+      width: 100%;
+      height: 165px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .reward-img-container:hover .reward-img {
+      transform: scale(1.05);
+    }
+
+    .reward-badge-tag {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: linear-gradient(135deg, #ff7b00, #e60000);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .reward-desc-box {
+      background: #171720;
+      border: 1px solid #282836;
+      border-radius: 10px;
+      padding: 10px 12px;
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .reward-desc-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ff9d3b;
+      margin-bottom: 4px;
+    }
+
+    .reward-desc-text {
+      font-size: 11px;
+      color: #b0b0c2;
+      line-height: 1.4;
+    }
+
+    /* MOBİL VE ORTA EKRAN DÜZENİ */
+    @media (max-width: 1020px) {
+      body {
+        padding: 8px;
+        justify-content: flex-start;
+      }
+      .main-wrapper {
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+      .leaderboard-panel, .reward-panel {
+        width: 100%;
+        max-width: 380px;
+      }
+      .controls-hint {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="main-wrapper">
+    <!-- SOL TARAF: CANLI ONLİNE SKOR TABLOSU -->
+    <div class="leaderboard-panel">
+      <div class="leaderboard-header">
+        <h3>🏆 Skor Tablosu</h3>
+        <span class="online-badge" id="onlineStatusBadge">
+          <span class="dot"></span>
+          <span id="onlineStatusText">Online</span>
+        </span>
+      </div>
+
+      <div class="active-user-bar">
+        <span>Oynayan:</span>
+        <span class="player-tag" id="activeNickBadge">Giriş Yapılmadı</span>
+      </div>
+      
+      <ul class="leaderboard-list" id="leaderboardList">
+        <!-- Gerçek skorlar yüklenecektir -->
+      </ul>
+
+      <div class="panel-footer">
+        <button class="config-server-btn" id="configServerBtn">⚙️ Sunucu Ayarı</button>
+      </div>
+    </div>
+
+    <!-- ORTA: YILAN OYUNU -->
+    <div class="game-container">
+      <div class="header">
+        <div class="title-box">
+          <h1>🌯 Zurna Dürüm Yılanı</h1>
+        </div>
+        <div class="score-board">
+          <div class="score-badge">
+            <span>Skor</span>
+            <b id="score">0</b>
+          </div>
+          <div class="score-badge speed">
+            <span>Hız</span>
+            <b id="speedLevel">0.5x</b>
+          </div>
+          <div class="score-badge high">
+            <span>En Yüksek</span>
+            <b id="high-score">0</b>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-wrapper">
+        <canvas id="gameCanvas" width="360" height="360"></canvas>
+        
+        <!-- Başlangıç / Nickname / Renk Seçici / Bitiş Ekranı -->
+        <div id="gameOverlay" class="overlay">
+          <h2 id="overlayTitle">🌯 Hatay Zurna Avcısı</h2>
+          <p id="overlayDesc">1. sıraya adını yazdır, sağ köşedeki büyük Zurna Dürüm ödülünü kap!</p>
+          
+          <div class="nick-input-box" id="nickBox">
+            <label for="playerNickInput">Oyuncu Nick Name:</label>
+            <input type="text" id="playerNickInput" placeholder="Örn: Burak" maxlength="12" autocomplete="off">
+          </div>
+
+          <!-- YILAN RENK SEÇİMİ -->
+          <div class="color-picker-box">
+            <span class="color-picker-label">Yılan Rengini Seç:</span>
+            <div class="color-options" id="colorOptions">
+              <button class="color-btn color-kirmizi active" data-color="kirmizi" title="Kırmızı"></button>
+              <button class="color-btn color-mavi" data-color="mavi" title="Mavi"></button>
+              <button class="color-btn color-sari" data-color="sari" title="Sarı"></button>
+              <button class="color-btn color-pembe" data-color="pembe" title="Pembe"></button>
+              <button class="color-btn color-yesil" data-color="yesil" title="Yeşil"></button>
+              <button class="color-btn color-mor" data-color="mor" title="Mor"></button>
+            </div>
+          </div>
+
+          <button id="startBtn" class="btn">Dürümleri Topla!</button>
+        </div>
+      </div>
+
+      <!-- MOBİL D-PAD YÖN BUTONLARI -->
+      <div class="dpad-container">
+        <button class="dpad-btn dpad-up" id="btnUp">▲</button>
+        <button class="dpad-btn dpad-left" id="btnLeft">◀</button>
+        <button class="dpad-btn dpad-down" id="btnDown">▼</button>
+        <button class="dpad-btn dpad-right" id="btnRight">▶</button>
+      </div>
+
+      <div class="mobile-tip">
+        <span>👆 Parmağını ekranda kaydırarak (Swipe) da oynayabilirsin!</span>
+      </div>
+
+      <div class="controls-hint">
+        <span>Klavye: <span class="key-badge">W A S D</span> veya <span class="key-badge">▲ ◀ ▼ ▶</span></span>
+        <span>Duraklat: <span class="key-badge">Boşluk</span></span>
+      </div>
+    </div>
+
+    <!-- SAĞ TARAF: BİRİNCİLİK ÖDÜLÜ PANELİ -->
+    <div class="reward-panel">
+      <div class="reward-header">
+        <h3>🥇 Birinci Ödülü</h3>
+        <p>Haftanın Şampiyonuna!</p>
+      </div>
+
+      <div class="reward-img-container">
+        <!-- Zurna Dürüm Fotoğrafı -->
+        <img 
+          src="zurna.jpg" 
+          alt="Hatay Zurna Dürüm Ödülü" 
+          class="reward-img"
+          onerror="this.src='https://images.unsplash.com/photo-1628294895950-9805252327bc?w=600&auto=format&fit=crop&q=80'"
+        >
+        <div class="reward-badge-tag">🔥 70 CM ZURNA</div>
+      </div>
+
+      <div class="reward-desc-box">
+        <div class="reward-desc-title">🌯 Bol Soslu Hatay Zurna Dürüm</div>
+        <p class="reward-desc-text">Skor tablosunda 1. sıraya adını yazdır, arkadaşından zurnayı kap!</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- RENK PALETLERİ ---
+    const COLOR_THEMES = {
+      kirmizi: { head: '#ff2a4b', body: '#e60026', stroke: '#700010', glow: 'rgba(255, 42, 75, 0.5)', hex: '#ff2a4b' },
+      mavi:    { head: '#00b4d8', body: '#0077b6', stroke: '#023e8a', glow: 'rgba(0, 180, 216, 0.5)', hex: '#00b4d8' },
+      sari:    { head: '#ffd166', body: '#f77f00', stroke: '#d62828', glow: 'rgba(255, 209, 102, 0.5)', hex: '#ffd166' },
+      pembe:   { head: '#ff70a6', body: '#e01e5a', stroke: '#700030', glow: 'rgba(255, 112, 166, 0.5)', hex: '#ff70a6' },
+      yesil:   { head: '#06d6a0', body: '#049a72', stroke: '#024b37', glow: 'rgba(6, 214, 160, 0.5)', hex: '#06d6a0' },
+      mor:     { head: '#b5179e', body: '#7209b7', stroke: '#3a0ca3', glow: 'rgba(181, 23, 158, 0.5)', hex: '#b5179e' }
+    };
+
+    let selectedColorKey = localStorage.getItem('snake_chosen_color') || 'kirmizi';
+
+    // --- GERÇEK ZAMANLI ONLİNE VERİTABANI (FIREBASE) ---
+    let dbUrl = localStorage.getItem('snake_db_url') || 'https://zurna-durum-oyunu-default-rtdb.firebaseio.com';
+    let db = null;
+    let isDbConnected = false;
+
+    function initCloudDatabase() {
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp({ databaseURL: dbUrl });
+        }
+        db = firebase.database();
+        listenToOnlineScores();
+      } catch (err) {
+        console.warn('Online sunucu bağlantı denemesi:', err);
+        showLocalFallback('Çevrimdışı');
+      }
+    }
+
+    function listenToOnlineScores() {
+      if (!db) return;
+      
+      const scoresRef = db.ref('zurna_leaderboard');
+      scoresRef.orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+        isDbConnected = true;
+        updateStatusBadge(true);
+        const data = snapshot.val();
+        
+        if (!data) {
+          renderEmptyLeaderboard();
+          return;
+        }
+
+        const scoresList = [];
+        Object.keys(data).forEach(key => {
+          scoresList.push(data[key]);
+        });
+
+        scoresList.sort((a, b) => b.score - a.score);
+        renderLeaderboard(scoresList);
+      }, (error) => {
+        console.warn('Veritabanı okuma hatası, yerel moda geçildi:', error);
+        showLocalFallback('Yerel Mod');
+      });
+    }
+
+    function pushOnlineScore(name, finalScore, colorKey) {
+      if (!name || finalScore <= 0) return;
+
+      if (isDbConnected && db) {
+        try {
+          const scoresRef = db.ref('zurna_leaderboard');
+          scoresRef.push({
+            name: name,
+            score: finalScore,
+            color: colorKey,
+            createdAt: Date.now()
+          });
+        } catch (e) {
+          console.error('Online skor gönderme hatası:', e);
+          saveLocalScore(name, finalScore, colorKey);
+        }
+      } else {
+        saveLocalScore(name, finalScore, colorKey);
+      }
+    }
+
+    function saveLocalScore(name, score, colorKey) {
+      let localScores = JSON.parse(localStorage.getItem('snake_local_scores') || '[]');
+      const existing = localScores.find(item => item.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        if (score > existing.score) existing.score = score;
+      } else {
+        localScores.push({ name, score, color: colorKey });
+      }
+      localScores.sort((a, b) => b.score - a.score);
+      localScores = localScores.slice(0, 10);
+      localStorage.setItem('snake_local_scores', JSON.stringify(localScores));
+      renderLeaderboard(localScores);
+    }
+
+    function showLocalFallback(statusText) {
+      isDbConnected = false;
+      updateStatusBadge(false, statusText);
+      const localScores = JSON.parse(localStorage.getItem('snake_local_scores') || '[]');
+      if (localScores.length === 0) {
+        renderEmptyLeaderboard();
+      } else {
+        renderLeaderboard(localScores);
+      }
+    }
+
+    function updateStatusBadge(online, text = 'Online') {
+      const badge = document.getElementById('onlineStatusBadge');
+      const txt = document.getElementById('onlineStatusText');
+      if (online) {
+        badge.style.color = '#38ef7d';
+        badge.style.borderColor = 'rgba(56, 239, 125, 0.3)';
+        txt.textContent = 'Canlı Online';
+      } else {
+        badge.style.color = '#ffaa00';
+        badge.style.borderColor = 'rgba(255, 170, 0, 0.3)';
+        txt.textContent = text;
+      }
+    }
+
+    function renderLeaderboard(list) {
+      leaderboardList.innerHTML = '';
+
+      if (!list || list.length === 0) {
+        renderEmptyLeaderboard();
+        highScoreElement.textContent = 0;
+        return;
+      }
+
+      highScoreElement.textContent = list[0].score;
+
+      list.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'leaderboard-item';
+        if (currentNick && item.name.toLowerCase() === currentNick.toLowerCase()) {
+          li.classList.add('current-user');
+        }
+
+        let rankSymbol = `#${index + 1}`;
+        let rankClass = 'rank-other';
+        if (index === 0) { rankSymbol = '🥇'; rankClass = 'rank-1'; }
+        else if (index === 1) { rankSymbol = '🥈'; rankClass = 'rank-2'; }
+        else if (index === 2) { rankSymbol = '🥉'; rankClass = 'rank-3'; }
+
+        const dotColor = (COLOR_THEMES[item.color] && COLOR_THEMES[item.color].hex) || '#ff7b00';
+
+        li.innerHTML = `
+          <div class="item-left">
+            <span class="rank-badge ${rankClass}">${rankSymbol}</span>
+            <span class="item-color-dot" style="background:${dotColor}"></span>
+            <span class="item-name">${escapeHtml(item.name)}</span>
+          </div>
+          <span class="item-score">${item.score}</span>
+        `;
+        leaderboardList.appendChild(li);
+      });
+    }
+
+    function renderEmptyLeaderboard() {
+      leaderboardList.innerHTML = `
+        <div class="empty-leaderboard">
+          <span>🌯</span>
+          <b>Henüz skor kaydedilmedi!</b>
+          <p>Oyna ve ilk online rekoru sen kır.</p>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    document.getElementById('configServerBtn').addEventListener('click', () => {
+      const entered = prompt("Firebase Realtime Database URL'nizi girin:\n(Varsayılan olarak ortak bulut adresi kullanılmaktadır)", dbUrl);
+      if (entered && entered.trim().startsWith('http')) {
+        dbUrl = entered.trim();
+        localStorage.setItem('snake_db_url', dbUrl);
+        location.reload();
+      }
+    });
+
+    // --- SES & TİTREŞİM ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function vibrate(pattern = 15) {
+      if (window.navigator && window.navigator.vibrate) {
+        try { window.navigator.vibrate(pattern); } catch (e) {}
+      }
+    }
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'eat') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(540, now);
+        osc.frequency.exponentialRampToValueAtTime(1100, now + 0.12);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.start(now);
+        osc.stop(now + 0.12);
+        vibrate(25);
+      } else if (type === 'die') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.35);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+        vibrate([50, 40, 60]);
+      }
+    }
+
+    // --- ELEMENTLER ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const scoreElement = document.getElementById('score');
+    const speedLevelElement = document.getElementById('speedLevel');
+    const highScoreElement = document.getElementById('high-score');
+    const gameOverlay = document.getElementById('gameOverlay');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlayDesc = document.getElementById('overlayDesc');
+    const startBtn = document.getElementById('startBtn');
+    const playerNickInput = document.getElementById('playerNickInput');
+    const activeNickBadge = document.getElementById('activeNickBadge');
+    const leaderboardList = document.getElementById('leaderboardList');
+    const colorOptionsContainer = document.getElementById('colorOptions');
+
+    // --- 15x15 İDEAL ALAN ---
+    const GRID_SIZE = 15;
+    const TILE_SIZE = canvas.width / GRID_SIZE; // 24px
+
+    const BASE_SPEED = 180;
+    const MIN_SPEED = 70;
+    const SPEED_ACCEL = 4;
+    let currentSpeed = BASE_SPEED;
+
+    let snake = [];
+    let direction = { x: 1, y: 0 };
+    let nextDirection = { x: 1, y: 0 };
+    let durum = { x: 10, y: 7 };
+    let score = 0;
+    let currentNick = localStorage.getItem('snake_saved_nick') || '';
+    if (currentNick) {
+      playerNickInput.value = currentNick;
+      activeNickBadge.textContent = currentNick;
+    }
+
+    let gameInterval = null;
+    let isRunning = false;
+    let isPaused = false;
+    let pulseAngle = 0;
+
+    // --- RENK SEÇİCİ ---
+    function setupColorPicker() {
+      const btns = colorOptionsContainer.querySelectorAll('.color-btn');
+      btns.forEach(btn => {
+        if (btn.getAttribute('data-color') === selectedColorKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+
+        btn.addEventListener('click', () => {
+          btns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedColorKey = btn.getAttribute('data-color');
+          localStorage.setItem('snake_chosen_color', selectedColorKey);
+          render();
+        });
+      });
+    }
+
+    // --- CANLI VE İRİ HATAY ZURNA DÜRÜM ÇİZİMİ 🌯🔥 ---
+    function drawZurnaDurum(x, y) {
+      const px = x * TILE_SIZE;
+      const py = y * TILE_SIZE;
+      const cx = px + TILE_SIZE / 2;
+      const cy = py + TILE_SIZE / 2;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-0.68 + Math.sin(pulseAngle) * 0.05);
+
+      ctx.shadowColor = 'rgba(255, 65, 0, 0.85)';
+      ctx.shadowBlur = 12;
+
+      const w = 10;
+      const h = 27;
+
+      const lavashGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+      lavashGrad.addColorStop(0, '#f29538');
+      lavashGrad.addColorStop(0.5, '#ffd27d');
+      lavashGrad.addColorStop(1, '#e8781e');
+
+      ctx.fillStyle = lavashGrad;
+      ctx.beginPath();
+      ctx.roundRect(-w / 2, -h / 2, w, h, [3, 3, 2, 2]);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#d90429';
+      ctx.fillRect(-w / 2, -h / 2 + 4, w, 2.5);
+      ctx.fillRect(-w / 2, -h / 2 + 9, w, 2);
+
+      ctx.fillStyle = '#6b3200';
+      ctx.fillRect(-w / 2 + 1, -h / 2 + 13, w - 2, 1);
+      ctx.fillRect(-w / 2 + 1, -h / 2 + 16, w - 2, 1);
+
+      const foilH = 11.5;
+      const foilGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+      foilGrad.addColorStop(0, '#8d99ae');
+      foilGrad.addColorStop(0.4, '#ffffff');
+      foilGrad.addColorStop(1, '#6c757d');
+
+      ctx.fillStyle = foilGrad;
+      ctx.beginPath();
+      ctx.roundRect(-w / 2 - 0.5, h / 2 - foilH, w + 1, foilH, [0, 0, 3, 3]);
+      ctx.fill();
+
+      ctx.strokeStyle = '#edf2f4';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.fillStyle = '#540b0e';
+      ctx.beginPath();
+      ctx.ellipse(-2.2, -h / 2 - 1.2, 2.5, 2.8, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(2.2, -h / 2 - 1.8, 2.8, 3.2, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ff0038';
+      ctx.beginPath();
+      ctx.arc(0, -h / 2 + 0.5, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#38b000';
+      ctx.fillRect(-1.5, -h / 2 - 3, 2, 2);
+
+      ctx.restore();
+    }
+
+    // --- SİYAH VE KARELİ 15x15 ARKA PLAN ---
+    function drawGrid() {
+      for (let r = 0; r < GRID_SIZE; r++) {
+        for (let c = 0; c < GRID_SIZE; c++) {
+          ctx.fillStyle = (r + c) % 2 === 0 ? '#0b0b0f' : '#14141a';
+          ctx.fillRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+          ctx.strokeStyle = '#1d1d28';
+          ctx.lineWidth = 0.6;
+          ctx.strokeRect(c * TILE_SIZE, r * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+      }
+    }
+
+    // --- SADE VE NET YILAN MODELİ ---
+    function drawSnake() {
+      const theme = COLOR_THEMES[selectedColorKey] || COLOR_THEMES.kirmizi;
+      const inset = 1.2;
+      const size = TILE_SIZE - inset * 2;
+
+      snake.forEach((segment, index) => {
+        const x = segment.x * TILE_SIZE + inset;
+        const y = segment.y * TILE_SIZE + inset;
+
+        if (index === 0) {
+          ctx.save();
+          ctx.shadowColor = theme.glow;
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = theme.head;
+          ctx.beginPath();
+          ctx.roundRect(x, y, size, size, 7);
+          ctx.fill();
+          ctx.restore();
+
+          ctx.strokeStyle = theme.stroke;
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(x, y, size, size);
+
+          ctx.fillStyle = '#ffffff';
+          let eye1 = { x: 0, y: 0 };
+          let eye2 = { x: 0, y: 0 };
+
+          if (direction.x === 1) {
+            eye1 = { x: x + size - 6, y: y + 5 };
+            eye2 = { x: x + size - 6, y: y + size - 8 };
+          } else if (direction.x === -1) {
+            eye1 = { x: x + 6, y: y + 5 };
+            eye2 = { x: x + 6, y: y + size - 8 };
+          } else if (direction.y === 1) {
+            eye1 = { x: x + 5, y: y + size - 6 };
+            eye2 = { x: x + size - 8, y: y + size - 6 };
+          } else {
+            eye1 = { x: x + 5, y: y + 6 };
+            eye2 = { x: x + size - 8, y: y + 6 };
+          }
+
+          ctx.beginPath();
+          ctx.arc(eye1.x, eye1.y, 2.7, 0, Math.PI * 2);
+          ctx.arc(eye2.x, eye2.y, 2.7, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#101015';
+          ctx.beginPath();
+          ctx.arc(eye1.x, eye1.y, 1.3, 0, Math.PI * 2);
+          ctx.arc(eye2.x, eye2.y, 1.3, 0, Math.PI * 2);
+          ctx.fill();
+
+        } else {
+          const ratio = index / snake.length;
+          ctx.fillStyle = ratio < 0.6 ? theme.body : theme.head;
+          ctx.beginPath();
+          ctx.roundRect(x, y, size, size, 5);
+          ctx.fill();
+
+          ctx.strokeStyle = theme.stroke;
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(x, y, size, size);
+        }
+      });
+    }
+
+    function spawnDurum() {
+      let valid = false;
+      while (!valid) {
+        durum = {
+          x: Math.floor(Math.random() * GRID_SIZE),
+          y: Math.floor(Math.random() * GRID_SIZE)
+        };
+        valid = !snake.some(segment => segment.x === durum.x && segment.y === durum.y);
+      }
+    }
+
+    function update() {
+      if (!isRunning || isPaused) return;
+
+      direction = { ...nextDirection };
+
+      const head = {
+        x: snake[0].x + direction.x,
+        y: snake[0].y + direction.y
+      };
+
+      if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+        gameOver();
+        return;
+      }
+
+      if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        gameOver();
+        return;
+      }
+
+      snake.unshift(head);
+
+      if (head.x === durum.x && head.y === durum.y) {
+        score += 10;
+        scoreElement.textContent = score;
+        playSound('eat');
+        spawnDurum();
+
+        const eatenCount = score / 10;
+        const newSpeed = Math.max(MIN_SPEED, BASE_SPEED - (eatenCount * SPEED_ACCEL));
+        
+        const speedMultiplier = (130 / newSpeed).toFixed(1) + 'x';
+        speedLevelElement.textContent = speedMultiplier;
+
+        if (newSpeed !== currentSpeed) {
+          currentSpeed = newSpeed;
+          clearInterval(gameInterval);
+          gameInterval = setInterval(update, currentSpeed);
+        }
+
+      } else {
+        snake.pop();
+      }
+
+      pulseAngle += 0.25;
+      render();
+    }
+
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      drawZurnaDurum(durum.x, durum.y);
+      drawSnake();
+    }
+
+    function initGame() {
+      const enteredNick = playerNickInput.value.trim() || 'Misafir';
+      currentNick = enteredNick;
+      localStorage.setItem('snake_saved_nick', currentNick);
+      activeNickBadge.textContent = currentNick;
+
+      snake = [
+        { x: 4, y: 7 },
+        { x: 3, y: 7 },
+        { x: 2, y: 7 }
+      ];
+      direction = { x: 1, y: 0 };
+      nextDirection = { x: 1, y: 0 };
+      score = 0;
+      currentSpeed = BASE_SPEED;
+      scoreElement.textContent = score;
+      speedLevelElement.textContent = '0.5x';
+
+      spawnDurum();
+      isRunning = true;
+      isPaused = false;
+      gameOverlay.classList.add('hidden');
+
+      if (gameInterval) clearInterval(gameInterval);
+      gameInterval = setInterval(update, currentSpeed);
+      render();
+    }
+
+    function gameOver() {
+      isRunning = false;
+      clearInterval(gameInterval);
+      playSound('die');
+
+      pushOnlineScore(currentNick, score, selectedColorKey);
+
+      overlayTitle.textContent = "Dürüm Bitti! 💥";
+      overlayDesc.innerHTML = `Oyuncu: <b>${escapeHtml(currentNick)}</b><br>Skor: <b>${score}</b> | Hız: <b>${speedLevelElement.textContent}</b><br>Online skor tablosuna kaydedildi!`;
+      startBtn.textContent = "Yeni Dürüme Başla";
+      gameOverlay.classList.remove('hidden');
+    }
+
+    function setDirection(newDir) {
+      if (!isRunning || isPaused) return;
+      if (newDir.x !== 0 && direction.x !== 0) return;
+      if (newDir.y !== 0 && direction.y !== 0) return;
+      nextDirection = newDir;
+      vibrate(10);
+    }
+
+    // --- DOKUNMATİK KAYDIRMA (SWIPE) ---
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    canvas.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+      if (!touchStartX || !touchStartY) return;
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+      const minDistance = 25;
+
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (Math.abs(diffX) > minDistance) {
+          if (diffX > 0) setDirection({ x: 1, y: 0 });
+          else setDirection({ x: -1, y: 0 });
+        }
+      } else {
+        if (Math.abs(diffY) > minDistance) {
+          if (diffY > 0) setDirection({ x: 0, y: 1 });
+          else setDirection({ x: 0, y: -1 });
+        }
+      }
+
+      touchStartX = 0;
+      touchStartY = 0;
+    }, { passive: true });
+
+    // --- KLAVYE DİNLERİCİLERİ ---
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement === playerNickInput) {
+        if (e.key === 'Enter') {
+          initGame();
+        }
+        return;
+      }
+
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+
+      if (e.key === ' ' || e.code === 'Space') {
+        if (!isRunning) {
+          initGame();
+        } else {
+          isPaused = !isPaused;
+          if (isPaused) {
+            overlayTitle.textContent = "Duraklatıldı ⏸️";
+            overlayDesc.textContent = "Devam etmek için Boşluk tuşuna bas.";
+            startBtn.textContent = "Devam Et";
+            gameOverlay.classList.remove('hidden');
+          } else {
+            gameOverlay.classList.add('hidden');
+          }
+        }
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          setDirection({ x: 0, y: -1 });
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          setDirection({ x: 0, y: 1 });
+          break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          setDirection({ x: -1, y: 0 });
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          setDirection({ x: 1, y: 0 });
+          break;
+      }
+    });
+
+    // --- D-PAD BUTONLARI ---
+    startBtn.addEventListener('click', () => {
+      if (isPaused) {
+        isPaused = false;
+        gameOverlay.classList.add('hidden');
+      } else {
+        initGame();
+      }
+    });
+
+    function setupDpadBtn(btnId, dir) {
+      const btn = document.getElementById(btnId);
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        setDirection(dir);
+      }, { passive: false });
+      btn.addEventListener('click', () => {
+        setDirection(dir);
+      });
+    }
+
+    setupDpadBtn('btnUp', { x: 0, y: -1 });
+    setupDpadBtn('btnDown', { x: 0, y: 1 });
+    setupDpadBtn('btnLeft', { x: -1, y: 0 });
+    setupDpadBtn('btnRight', { x: 1, y: 0 });
+
+    // Başlatma
+    setupColorPicker();
+    initCloudDatabase();
+    drawGrid();
+    drawZurnaDurum(durum.x, durum.y);
+  </script>
+</body>
+</html>
