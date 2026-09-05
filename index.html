@@ -837,9 +837,9 @@
     const TILE_SIZE = canvas.width / GRID_SIZE;
 
     const BASE_SPEED = 180;
-    const MIN_SPEED = 70;
-    const SPEED_ACCEL = 4;
+    const MIN_SPEED = 50;
     let currentSpeed = BASE_SPEED;
+    let speedBonusModifier = 0; // Şans kutusundan gelen kalıcı hız değişimi
 
     let snake = [];
     let direction = { x: 1, y: 0 };
@@ -856,7 +856,6 @@
     let isPaused = false;
 
     let mysteryBox = null;
-    let speedTimer = null;
     let boxMessage = "";
     let boxMessageTimer = null;
     let lastRenderTime = 0;
@@ -878,18 +877,33 @@
       });
     }
 
-    // --- HAFİF DÜRÜM ÇİZİMİ ---
+    // --- ŞIK DÜRÜM ÇİZİMİ ---
     function drawZurnaDurum(x, y) {
       const px = x * TILE_SIZE, py = y * TILE_SIZE;
-      ctx.fillStyle = '#f29538';
-      ctx.fillRect(px + 4, py + 2, TILE_SIZE - 8, TILE_SIZE - 4);
-      ctx.fillStyle = '#d90429';
-      ctx.fillRect(px + 4, py + 4, TILE_SIZE - 8, 3);
-      ctx.fillStyle = '#8d99ae';
-      ctx.fillRect(px + 4, py + TILE_SIZE - 8, TILE_SIZE - 8, 6);
+      const pad = 3;
+      
+      // Lavaş tabanı
+      ctx.fillStyle = '#e5a25d';
+      ctx.beginPath();
+      ctx.roundRect(px + pad, py + pad, TILE_SIZE - (pad * 2), TILE_SIZE - (pad * 2), 4);
+      ctx.fill();
+
+      // Üst Sos / Domates Detayı
+      ctx.fillStyle = '#cc2b1e';
+      ctx.fillRect(px + pad + 2, py + pad, TILE_SIZE - (pad * 2) - 4, 3);
+
+      // Yeşillik Detayı
+      ctx.fillStyle = '#2b9348';
+      ctx.fillRect(px + pad + 4, py + pad + 3, TILE_SIZE - (pad * 2) - 8, 2);
+
+      // Folyolu Sargı (Alt Kısım)
+      ctx.fillStyle = '#a8b2d1';
+      ctx.fillRect(px + pad, py + (TILE_SIZE / 2), TILE_SIZE - (pad * 2), (TILE_SIZE / 2) - pad);
+      ctx.fillStyle = '#d0d7de';
+      ctx.fillRect(px + pad + 2, py + (TILE_SIZE / 2) + 2, 3, (TILE_SIZE / 2) - pad - 4);
     }
 
-    // --- HAFİF SÜRPRİZ KUTU ÇİZİMİ ---
+    // --- SÜRPRİZ KUTU ÇİZİMİ ---
     function drawMysteryBox() {
       if (!mysteryBox) return;
       const px = mysteryBox.x * TILE_SIZE, py = mysteryBox.y * TILE_SIZE;
@@ -919,7 +933,6 @@
       }
     }
 
-    // --- ULTRA HAFİF VE AKICI YILAN ÇİZİMİ ---
     function drawSnake() {
       const theme = COLOR_THEMES[selectedColorKey] || COLOR_THEMES.kirmizi;
       const size = TILE_SIZE - 2;
@@ -966,35 +979,46 @@
     }
 
     function applyMysteryEffect() {
-      const effects = ['SPEED_UP', 'SLOW_DOWN', 'PLUS_SCORE', 'MINUS_SCORE'];
-      const effect = effects[Math.floor(Math.random() * effects.length)];
+      const rand = Math.random() * 100;
 
-      if (speedTimer) clearTimeout(speedTimer);
-
-      if (effect === 'SPEED_UP') {
-        currentSpeed = 80;
-        showBoxMessage("⚡ Hızlandın!");
-        resetSpeedAfterDelay();
-      } else if (effect === 'SLOW_DOWN') {
-        currentSpeed = 220;
-        showBoxMessage("🐢 Yavaşladın!");
-        resetSpeedAfterDelay();
-      } else if (effect === 'PLUS_SCORE') {
+      if (rand < 5) {
+        // %5 İhtimal
+        score += 100;
+        scoreElement.textContent = score;
+        showBoxMessage("🔥 +100 EFSANE PUAN!");
+      } else if (rand < 20) {
+        // %15 İhtimal (5-20 arası)
+        score += 50;
+        scoreElement.textContent = score;
+        showBoxMessage("🎉 +50 BÜYÜK PUAN!");
+      } else if (rand < 45) {
+        // %25 İhtimal (20-45 arası)
         score += 10;
         scoreElement.textContent = score;
-        showBoxMessage("🎉 +10 Puan!");
-      } else if (effect === 'MINUS_SCORE') {
+        showBoxMessage("⭐ +10 Puan!");
+      } else if (rand < 70) {
+        // %25 İhtimal (45-70 arası)
         score = Math.max(0, score - 10);
         scoreElement.textContent = score;
         showBoxMessage("💥 -10 Puan!");
+      } else if (rand < 85) {
+        // %15 İhtimal (70-85 arası) - Kalıcı 0.1x Hızlanma
+        speedBonusModifier += 15;
+        showBoxMessage("⚡ Hız +0.1x Yükseldi!");
+      } else {
+        // %15 İhtimal (85-100 arası) - Kalıcı 0.1x Yavaşlama
+        speedBonusModifier -= 15;
+        showBoxMessage("🐢 Hız -0.1x Düştü!");
       }
+
+      recalculateSpeed();
     }
 
-    function resetSpeedAfterDelay() {
-      speedTimer = setTimeout(() => {
-        const eatenCount = score / 10;
-        currentSpeed = Math.max(MIN_SPEED, BASE_SPEED - (eatenCount * SPEED_ACCEL));
-      }, 5000);
+    function recalculateSpeed() {
+      const eatenCount = score / 10;
+      const baseCalc = BASE_SPEED - (eatenCount * 4) - speedBonusModifier;
+      currentSpeed = Math.max(MIN_SPEED, baseCalc);
+      speedLevelElement.textContent = (130 / currentSpeed).toFixed(1) + 'x';
     }
 
     function showBoxMessage(msg) {
@@ -1034,10 +1058,7 @@
         scoreElement.textContent = score;
         playSound('eat');
         spawnDurum();
-
-        const eatenCount = score / 10;
-        currentSpeed = Math.max(MIN_SPEED, BASE_SPEED - (eatenCount * SPEED_ACCEL));
-        speedLevelElement.textContent = (130 / currentSpeed).toFixed(1) + 'x';
+        recalculateSpeed();
       } else {
         snake.pop();
       }
@@ -1077,6 +1098,7 @@
       direction = { x: 1, y: 0 };
       inputQueue = [];
       score = 0;
+      speedBonusModifier = 0;
       currentSpeed = BASE_SPEED;
       scoreElement.textContent = score;
       speedLevelElement.textContent = '0.5x';
@@ -1084,7 +1106,6 @@
       spawnDurum();
       mysteryBox = null;
       boxMessage = "";
-      if (speedTimer) clearTimeout(speedTimer);
       spawnMysteryBox();
       
       isRunning = true;
