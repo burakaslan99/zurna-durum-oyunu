@@ -839,7 +839,7 @@
     const BASE_SPEED = 180;
     const MIN_SPEED = 50;
     let currentSpeed = BASE_SPEED;
-    let speedBonusModifier = 0; // Şans kutusundan gelen kalıcı hız değişimi
+    let speedBonusModifier = 0;
 
     let snake = [];
     let direction = { x: 1, y: 0 };
@@ -877,7 +877,7 @@
       });
     }
 
-    // --- ŞIK DÜRÜM ÇİZİMİ ---
+    // --- ŞIK VE İŞTAH AÇICI DÜRÜM ÇİZİMİ ---
     function drawZurnaDurum(x, y) {
       const px = x * TILE_SIZE, py = y * TILE_SIZE;
       const pad = 3;
@@ -978,35 +978,36 @@
       }
     }
 
+    // --- YENİ ŞANS KUTUSU ORANLARI VE ETKİLERİ ---
     function applyMysteryEffect() {
       const rand = Math.random() * 100;
 
-      if (rand < 5) {
-        // %5 İhtimal
+      if (rand < 1) {
+        // %1 İhtimal: +100 Puan
         score += 100;
         scoreElement.textContent = score;
         showBoxMessage("🔥 +100 EFSANE PUAN!");
-      } else if (rand < 20) {
-        // %15 İhtimal (5-20 arası)
+      } else if (rand < 11) {
+        // %10 İhtimal (1 ile 11 arası): +50 Puan
         score += 50;
         scoreElement.textContent = score;
         showBoxMessage("🎉 +50 BÜYÜK PUAN!");
-      } else if (rand < 45) {
-        // %25 İhtimal (20-45 arası)
+      } else if (rand < 33.25) {
+        // %22.25 İhtimal: +10 Puan
         score += 10;
         scoreElement.textContent = score;
         showBoxMessage("⭐ +10 Puan!");
-      } else if (rand < 70) {
-        // %25 İhtimal (45-70 arası)
+      } else if (rand < 55.5) {
+        // %22.25 İhtimal: -10 Puan
         score = Math.max(0, score - 10);
         scoreElement.textContent = score;
         showBoxMessage("💥 -10 Puan!");
-      } else if (rand < 85) {
-        // %15 İhtimal (70-85 arası) - Kalıcı 0.1x Hızlanma
+      } else if (rand < 77.75) {
+        // %22.25 İhtimal: Kalıcı +0.1x Hızlanma
         speedBonusModifier += 15;
         showBoxMessage("⚡ Hız +0.1x Yükseldi!");
       } else {
-        // %15 İhtimal (85-100 arası) - Kalıcı 0.1x Yavaşlama
+        // %22.25 İhtimal: Kalıcı -0.1x Yavaşlama
         speedBonusModifier -= 15;
         showBoxMessage("🐢 Hız -0.1x Düştü!");
       }
