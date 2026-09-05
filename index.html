@@ -1416,7 +1416,7 @@
       mysteryBox = null;
       boxMessage = "";
       if (speedTimer) clearTimeout(speedTimer);
-      setTimeout(spawnMysteryBox, 5000);
+      spawnMysteryBox();
       isRunning = true;
       isPaused = false;
       gameOverlay.classList.add('hidden');
