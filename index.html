@@ -1050,6 +1050,11 @@
     let isRunning = false;
     let isPaused = false;
     let pulseAngle = 0;
+    // --- SÜRPRİZ KUTU DEĞİŞKENLERİ ---
+    let mysteryBox = null;
+    let speedTimer = null;
+    let boxMessage = "";
+    let boxMessageTimer = null;
 
     // --- RENK SEÇİCİ ---
     function setupColorPicker() {
@@ -1141,6 +1146,42 @@
     }
 
     // --- SİYAH VE KARELİ 15x15 ARKA PLAN ---
+    // --- SÜRPRİZ KUTU ÇİZİMİ 🎁 ---
+    function drawMysteryBox() {
+      if (!mysteryBox) return;
+
+      const px = mysteryBox.x * TILE_SIZE;
+      const py = mysteryBox.y * TILE_SIZE;
+
+      ctx.save();
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#ffb700';
+      ctx.beginPath();
+      ctx.roundRect(px + 2, py + 2, TILE_SIZE - 4, TILE_SIZE - 4, 5);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#101015';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', px + TILE_SIZE / 2, py + TILE_SIZE / 2);
+      ctx.restore();
+    }
+
+    // --- BİLDİRİM MESAJI ÇİZİMİ 💬 ---
+    function drawBoxMessage() {
+      if (!boxMessage) return;
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#000000';
+      ctx.shadowBlur = 6;
+      ctx.fillText(boxMessage, canvas.width / 2, 30);
+      ctx.restore();
+    }
     function drawGrid() {
       for (let r = 0; r < GRID_SIZE; r++) {
         for (let c = 0; c < GRID_SIZE; c++) {
@@ -1231,6 +1272,63 @@
         valid = !snake.some(segment => segment.x === durum.x && segment.y === durum.y);
       }
     }
+    function spawnMysteryBox() {
+      let valid = false;
+      while (!valid) {
+        mysteryBox = {
+          x: Math.floor(Math.random() * GRID_SIZE),
+          y: Math.floor(Math.random() * GRID_SIZE)
+        };
+        const isOnSnake = snake.some(s => s.x === mysteryBox.x && s.y === mysteryBox.y);
+        const isOnDurum = (durum.x === mysteryBox.x && durum.y === mysteryBox.y);
+        if (!isOnSnake && !isOnDurum) valid = true;
+      }
+    }
+
+    function applyMysteryEffect() {
+      const effects = ['SPEED_UP', 'SLOW_DOWN', 'PLUS_SCORE', 'MINUS_SCORE'];
+      const effect = effects[Math.floor(Math.random() * effects.length)];
+
+      if (speedTimer) clearTimeout(speedTimer);
+
+      if (effect === 'SPEED_UP') {
+        currentSpeed = 80;
+        showBoxMessage("⚡ Hızlandın!");
+        resetSpeedAfterDelay();
+      } else if (effect === 'SLOW_DOWN') {
+        currentSpeed = 220;
+        showBoxMessage("🐢 Yavaşladın!");
+        resetSpeedAfterDelay();
+      } else if (effect === 'PLUS_SCORE') {
+        score += 10;
+        scoreElement.textContent = score;
+        showBoxMessage("🎉 +10 Puan!");
+      } else if (effect === 'MINUS_SCORE') {
+        score = Math.max(0, score - 10);
+        scoreElement.textContent = score;
+        showBoxMessage("💥 -10 Puan!");
+      }
+
+      clearInterval(gameInterval);
+      gameInterval = setInterval(update, currentSpeed);
+    }
+
+    function resetSpeedAfterDelay() {
+      speedTimer = setTimeout(() => {
+        const eatenCount = score / 10;
+        currentSpeed = Math.max(MIN_SPEED, BASE_SPEED - (eatenCount * SPEED_ACCEL));
+        clearInterval(gameInterval);
+        gameInterval = setInterval(update, currentSpeed);
+      }, 5000);
+    }
+
+    function showBoxMessage(msg) {
+      boxMessage = msg;
+      if (boxMessageTimer) clearTimeout(boxMessageTimer);
+      boxMessageTimer = setTimeout(() => {
+        boxMessage = "";
+      }, 2000);
+    }
 
     function update() {
       if (!isRunning || isPaused) return;
@@ -1255,10 +1353,17 @@
       snake.unshift(head);
 
       if (head.x === durum.x && head.y === durum.y) {
+        // Sürpriz Kutu Yeme Kontrolü
+      if (mysteryBox && head.x === mysteryBox.x && head.y === mysteryBox.y) {
+        playSound('eat');
+        applyMysteryEffect();
+        mysteryBox = null;
+        setTimeout(spawnMysteryBox, 12000);
+      }
         score += 10;
         scoreElement.textContent = score;
         playSound('eat');
-        spawnDurum();
+        spawnDurum();  <
 
         const eatenCount = score / 10;
         const newSpeed = Math.max(MIN_SPEED, BASE_SPEED - (eatenCount * SPEED_ACCEL));
@@ -1280,11 +1385,13 @@
       render();
     }
 
-    function render() {
+  function render() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid();
       drawZurnaDurum(durum.x, durum.y);
+      drawMysteryBox();
       drawSnake();
+      drawBoxMessage();
     }
 
     function initGame() {
@@ -1306,6 +1413,10 @@
       speedLevelElement.textContent = '0.5x';
 
       spawnDurum();
+      mysteryBox = null;
+      boxMessage = "";
+      if (speedTimer) clearTimeout(speedTimer);
+      setTimeout(spawnMysteryBox, 5000);
       isRunning = true;
       isPaused = false;
       gameOverlay.classList.add('hidden');
