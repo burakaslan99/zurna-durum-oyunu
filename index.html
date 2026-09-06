@@ -837,9 +837,10 @@
     const TILE_SIZE = canvas.width / GRID_SIZE;
 
     const BASE_SPEED = 180;
-    const MIN_SPEED = 50;
+    const MIN_SPEED = 60;
     let currentSpeed = BASE_SPEED;
     let speedBonusModifier = 0;
+    let durumEatenCount = 0; // Yenilen gerçek dürüm sayacını tutar
 
     let snake = [];
     let direction = { x: 1, y: 0 };
@@ -877,33 +878,27 @@
       });
     }
 
-    // --- ŞIK VE İŞTAH AÇICI DÜRÜM ÇİZİMİ ---
     function drawZurnaDurum(x, y) {
       const px = x * TILE_SIZE, py = y * TILE_SIZE;
       const pad = 3;
       
-      // Lavaş tabanı
       ctx.fillStyle = '#e5a25d';
       ctx.beginPath();
       ctx.roundRect(px + pad, py + pad, TILE_SIZE - (pad * 2), TILE_SIZE - (pad * 2), 4);
       ctx.fill();
 
-      // Üst Sos / Domates Detayı
       ctx.fillStyle = '#cc2b1e';
       ctx.fillRect(px + pad + 2, py + pad, TILE_SIZE - (pad * 2) - 4, 3);
 
-      // Yeşillik Detayı
       ctx.fillStyle = '#2b9348';
       ctx.fillRect(px + pad + 4, py + pad + 3, TILE_SIZE - (pad * 2) - 8, 2);
 
-      // Folyolu Sargı (Alt Kısım)
       ctx.fillStyle = '#a8b2d1';
       ctx.fillRect(px + pad, py + (TILE_SIZE / 2), TILE_SIZE - (pad * 2), (TILE_SIZE / 2) - pad);
       ctx.fillStyle = '#d0d7de';
       ctx.fillRect(px + pad + 2, py + (TILE_SIZE / 2) + 2, 3, (TILE_SIZE / 2) - pad - 4);
     }
 
-    // --- SÜRPRİZ KUTU ÇİZİMİ ---
     function drawMysteryBox() {
       if (!mysteryBox) return;
       const px = mysteryBox.x * TILE_SIZE, py = mysteryBox.y * TILE_SIZE;
@@ -978,37 +973,30 @@
       }
     }
 
-    // --- YENİ ŞANS KUTUSU ORANLARI VE ETKİLERİ ---
     function applyMysteryEffect() {
       const rand = Math.random() * 100;
 
       if (rand < 1) {
-        // %1 İhtimal: +100 Puan
         score += 100;
         scoreElement.textContent = score;
         showBoxMessage("🔥 +100 EFSANE PUAN!");
       } else if (rand < 11) {
-        // %10 İhtimal (1 ile 11 arası): +50 Puan
         score += 50;
         scoreElement.textContent = score;
         showBoxMessage("🎉 +50 BÜYÜK PUAN!");
       } else if (rand < 33.25) {
-        // %22.25 İhtimal: +10 Puan
         score += 10;
         scoreElement.textContent = score;
         showBoxMessage("⭐ +10 Puan!");
       } else if (rand < 55.5) {
-        // %22.25 İhtimal: -10 Puan
         score = Math.max(0, score - 10);
         scoreElement.textContent = score;
         showBoxMessage("💥 -10 Puan!");
       } else if (rand < 77.75) {
-        // %22.25 İhtimal: Kalıcı +0.1x Hızlanma
-        speedBonusModifier += 15;
+        speedBonusModifier += 10;
         showBoxMessage("⚡ Hız +0.1x Yükseldi!");
       } else {
-        // %22.25 İhtimal: Kalıcı -0.1x Yavaşlama
-        speedBonusModifier -= 15;
+        speedBonusModifier -= 10;
         showBoxMessage("🐢 Hız -0.1x Düştü!");
       }
 
@@ -1016,8 +1004,9 @@
     }
 
     function recalculateSpeed() {
-      const eatenCount = score / 10;
-      const baseCalc = BASE_SPEED - (eatenCount * 4) - speedBonusModifier;
+      // İvme Yumuşatıldı: Dürüm başına hızlanma kat sayısı 4 yerine 1.5 alındı.
+      // 50 veya 100 puan kazanıldığında hıza aniden fırlama yapmaması için dürümEatenCount baz alındı.
+      const baseCalc = BASE_SPEED - (durumEatenCount * 1.5) - speedBonusModifier;
       currentSpeed = Math.max(MIN_SPEED, baseCalc);
       speedLevelElement.textContent = (130 / currentSpeed).toFixed(1) + 'x';
     }
@@ -1056,6 +1045,7 @@
 
       if (head.x === durum.x && head.y === durum.y) {
         score += 10;
+        durumEatenCount += 1;
         scoreElement.textContent = score;
         playSound('eat');
         spawnDurum();
@@ -1099,6 +1089,7 @@
       direction = { x: 1, y: 0 };
       inputQueue = [];
       score = 0;
+      durumEatenCount = 0;
       speedBonusModifier = 0;
       currentSpeed = BASE_SPEED;
       scoreElement.textContent = score;
