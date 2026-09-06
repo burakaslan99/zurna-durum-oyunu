@@ -839,8 +839,7 @@
     const BASE_SPEED = 180;
     const MIN_SPEED = 60;
     let currentSpeed = BASE_SPEED;
-    let speedBonusModifier = 0;
-    let durumEatenCount = 0; // Yenilen gerçek dürüm sayacını tutar
+    let durumEatenCount = 0;
 
     let snake = [];
     let direction = { x: 1, y: 0 };
@@ -973,40 +972,35 @@
       }
     }
 
+    // --- SADECE PUAN FAKTÖRLÜ SÜRPRİZ KUTU ---
     function applyMysteryEffect() {
       const rand = Math.random() * 100;
 
       if (rand < 1) {
+        // %1 İhtimal
         score += 100;
         scoreElement.textContent = score;
         showBoxMessage("🔥 +100 EFSANE PUAN!");
       } else if (rand < 11) {
+        // %10 İhtimal (%1 - %11)
         score += 50;
         scoreElement.textContent = score;
         showBoxMessage("🎉 +50 BÜYÜK PUAN!");
-      } else if (rand < 33.25) {
+      } else if (rand < 55.5) {
+        // %44.5 İhtimal (%11 - %55.5)
         score += 10;
         scoreElement.textContent = score;
         showBoxMessage("⭐ +10 Puan!");
-      } else if (rand < 55.5) {
+      } else {
+        // %44.5 İhtimal (%55.5 - %100)
         score = Math.max(0, score - 10);
         scoreElement.textContent = score;
         showBoxMessage("💥 -10 Puan!");
-      } else if (rand < 77.75) {
-        speedBonusModifier += 10;
-        showBoxMessage("⚡ Hız +0.1x Yükseldi!");
-      } else {
-        speedBonusModifier -= 10;
-        showBoxMessage("🐢 Hız -0.1x Düştü!");
       }
-
-      recalculateSpeed();
     }
 
     function recalculateSpeed() {
-      // İvme Yumuşatıldı: Dürüm başına hızlanma kat sayısı 4 yerine 1.5 alındı.
-      // 50 veya 100 puan kazanıldığında hıza aniden fırlama yapmaması için dürümEatenCount baz alındı.
-      const baseCalc = BASE_SPEED - (durumEatenCount * 1.5) - speedBonusModifier;
+      const baseCalc = BASE_SPEED - (durumEatenCount * 1.5);
       currentSpeed = Math.max(MIN_SPEED, baseCalc);
       speedLevelElement.textContent = (130 / currentSpeed).toFixed(1) + 'x';
     }
@@ -1090,7 +1084,6 @@
       inputQueue = [];
       score = 0;
       durumEatenCount = 0;
-      speedBonusModifier = 0;
       currentSpeed = BASE_SPEED;
       scoreElement.textContent = score;
       speedLevelElement.textContent = '0.5x';
