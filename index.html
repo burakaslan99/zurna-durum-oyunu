@@ -999,6 +999,7 @@
       }
     }
 
+    // Dürüm yedikçe gerçekleşen yumuşak ve kontrollü hızlanma
     function recalculateSpeed() {
       const baseCalc = BASE_SPEED - (durumEatenCount * 1.5);
       currentSpeed = Math.max(MIN_SPEED, baseCalc);
