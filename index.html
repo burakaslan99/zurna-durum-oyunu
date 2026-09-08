@@ -8,6 +8,7 @@
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
   <style>
     * {
@@ -664,16 +665,33 @@
     };
 
     let selectedColorKey = localStorage.getItem('snake_chosen_color') || 'kirmizi';
-
     let dbUrl = 'https://zurna-oyunu-default-rtdb.firebaseio.com';
     let db = null;
     let isDbConnected = false;
+
+    // Basit Küfür / Uygunsuz İsim Filtresi
+    function sanitizeInput(text) {
+      if (!text) return 'Misafir';
+      const clean = text.trim();
+      const forbidden = ['admin', 'http', 'script', 'null', 'undefined'];
+      const lower = clean.toLowerCase();
+      for (let word of forbidden) {
+        if (lower.includes(word)) return 'Oyuncu';
+      }
+      return clean.substring(0, 12);
+    }
 
     function initCloudDatabase() {
       try {
         if (!firebase.apps.length) firebase.initializeApp({ databaseURL: dbUrl });
         db = firebase.database();
-        listenToOnlineScores();
+        
+        // Anonim Kimlik Doğrulama Katmanı
+        firebase.auth().signInAnonymously().then(() => {
+          listenToOnlineScores();
+        }).catch(() => {
+          listenToOnlineScores();
+        });
       } catch (err) {
         showLocalFallback('Çevrimdışı');
       }
@@ -697,10 +715,12 @@
     }
 
     function pushOnlineScore(name, finalScore, colorKey) {
-      if (!name || finalScore <= 0 || !isDbConnected || !db) return;
+      const cleanName = sanitizeInput(name);
+      if (!cleanName || finalScore <= 0 || !isDbConnected || !db) return;
+      
       try {
         const scoresRef = db.ref('zurna_leaderboard');
-        scoresRef.orderByChild('name').equalTo(name).once('value', (snapshot) => {
+        scoresRef.orderByChild('name').equalTo(cleanName).once('value', (snapshot) => {
           if (snapshot.exists()) {
             snapshot.forEach((child) => {
               if (finalScore > (child.val().score || 0)) {
@@ -708,7 +728,7 @@
               }
             });
           } else {
-            scoresRef.push({ name, score: finalScore, color: colorKey, timestamp: Date.now() });
+            scoresRef.push({ name: cleanName, score: finalScore, color: colorKey, timestamp: Date.now() });
           }
         });
       } catch (e) {}
@@ -977,34 +997,28 @@
       }
     }
 
-    // --- SADECE PUAN FAKTÖRLÜ SÜRPRİZ KUTU ---
     function applyMysteryEffect() {
       const rand = Math.random() * 100;
 
       if (rand < 1) {
-        // %1 İhtimal
         score += 100;
         scoreElement.textContent = score;
         showBoxMessage("🔥 +100 EFSANE PUAN!");
       } else if (rand < 11) {
-        // %10 İhtimal (%1 - %11)
         score += 50;
         scoreElement.textContent = score;
         showBoxMessage("🎉 +50 BÜYÜK PUAN!");
       } else if (rand < 55.5) {
-        // %44.5 İhtimal (%11 - %55.5)
         score += 10;
         scoreElement.textContent = score;
         showBoxMessage("⭐ +10 Puan!");
       } else {
-        // %44.5 İhtimal (%55.5 - %100)
         score = Math.max(0, score - 10);
         scoreElement.textContent = score;
         showBoxMessage("💥 -10 Puan!");
       }
     }
 
-    // Dürüm yedikçe gerçekleşen yumuşak ve kontrollü hızlanma
     function recalculateSpeed() {
       const baseCalc = BASE_SPEED - (durumEatenCount * 1.5);
       currentSpeed = Math.max(MIN_SPEED, baseCalc);
@@ -1080,7 +1094,7 @@
     }
 
     function initGame() {
-      const enteredNick = playerNickInput.value.trim() || 'Misafir';
+      const enteredNick = sanitizeInput(playerNickInput.value);
       currentNick = enteredNick;
       localStorage.setItem('snake_saved_nick', currentNick);
       activeNickBadge.textContent = currentNick;
