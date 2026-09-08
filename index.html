@@ -3,12 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Hatay Zurna Dürüm Avcısı - Canlı Online Yılan Oyunu</title>
-  
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <title>Hatay Zurna Dürüm Avcısı - Yılan Oyunu</title>
 
   <style>
     * {
@@ -36,182 +31,11 @@
 
     .main-wrapper {
       display: flex;
-      flex-direction: row;
-      gap: 18px;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      max-width: 1040px;
+      max-width: 400px;
       width: 100%;
-    }
-
-    .leaderboard-panel {
-      background: #101015;
-      padding: 18px;
-      border-radius: 20px;
-      border: 1px solid #262634;
-      width: 250px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .leaderboard-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #242432;
-    }
-
-    .leaderboard-header h3 {
-      font-size: 15px;
-      font-weight: 700;
-      color: #ff7b00;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .online-badge {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 6px;
-      background: rgba(56, 239, 125, 0.1);
-      color: #38ef7d;
-      border: 1px solid rgba(56, 239, 125, 0.3);
-      font-weight: 600;
-    }
-
-    .online-badge .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #38ef7d;
-    }
-
-    .active-user-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      font-size: 11px;
-      color: #8c8c9e;
-    }
-
-    .player-tag {
-      background: #1f1f2c;
-      color: #e0e0f0;
-      padding: 3px 8px;
-      border-radius: 6px;
-      border: 1px solid #323246;
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-weight: 600;
-    }
-
-    .leaderboard-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-      min-height: 180px;
-    }
-
-    .empty-leaderboard {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 30px 10px;
-      color: #747488;
-      font-size: 12px;
-      line-height: 1.5;
-    }
-
-    .empty-leaderboard span {
-      font-size: 26px;
-      margin-bottom: 8px;
-    }
-
-    .leaderboard-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #171720;
-      padding: 8px 11px;
-      border-radius: 9px;
-      border: 1px solid #232330;
-      font-size: 13px;
-    }
-
-    .leaderboard-item.current-user {
-      background: rgba(255, 123, 0, 0.12);
-      border-color: #ff7b00;
-    }
-
-    .item-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      overflow: hidden;
-    }
-
-    .rank-badge {
-      font-size: 13px;
-      font-weight: 800;
-      width: 20px;
-      text-align: center;
-    }
-
-    .rank-1 { color: #ffd700; }
-    .rank-2 { color: #c0c0c0; }
-    .rank-3 { color: #cd7f32; }
-    .rank-other { color: #6a6a7c; font-size: 11px; }
-
-    .item-color-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .item-name {
-      font-weight: 600;
-      color: #e0e0ec;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 105px;
-    }
-
-    .item-score {
-      font-family: monospace;
-      font-size: 13px;
-      font-weight: 700;
-      color: #38ef7d;
-    }
-
-    .panel-footer {
-      margin-top: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .config-server-btn {
-      background: transparent;
-      border: 1px dashed #343446;
-      color: #727288;
-      font-size: 10px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      cursor: pointer;
     }
 
     .game-container {
@@ -223,7 +47,6 @@
       flex-direction: column;
       align-items: center;
       width: 100%;
-      max-width: 380px;
     }
 
     .header {
@@ -316,40 +139,10 @@
     .overlay p {
       font-size: 13px;
       color: #b2b2c4;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       text-align: center;
       max-width: 270px;
       line-height: 1.35;
-    }
-
-    .nick-input-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      width: 100%;
-      max-width: 220px;
-      margin-bottom: 10px;
-    }
-
-    .nick-input-box label {
-      font-size: 11px;
-      color: #9c9cb4;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-
-    .nick-input-box input {
-      width: 100%;
-      background: #171722;
-      border: 2px solid #ff7b00;
-      border-radius: 9px;
-      padding: 7px 12px;
-      color: #ffffff;
-      font-size: 14px;
-      font-weight: 700;
-      text-align: center;
-      outline: none;
     }
 
     .color-picker-box {
@@ -357,7 +150,7 @@
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
       width: 100%;
     }
 
@@ -459,89 +252,7 @@
       border: 1px solid #343444;
     }
 
-    .reward-panel {
-      background: #101015;
-      padding: 18px;
-      border-radius: 20px;
-      border: 1px solid #2e281e;
-      width: 250px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-
-    .reward-header {
-      width: 100%;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #242432;
-    }
-
-    .reward-header h3 {
-      font-size: 16px;
-      font-weight: 800;
-      color: #ffd166;
-    }
-
-    .reward-header p {
-      font-size: 11px;
-      color: #a0a0b8;
-    }
-
-    .reward-img-container {
-      width: 100%;
-      border-radius: 14px;
-      overflow: hidden;
-      border: 2px solid #ff7b00;
-      margin-bottom: 12px;
-      position: relative;
-      background: #181822;
-    }
-
-    .reward-img {
-      width: 100%;
-      height: 165px;
-      object-fit: cover;
-      display: block;
-    }
-
-    .reward-badge-tag {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #ff7b00;
-      color: #fff;
-      font-size: 10px;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 6px;
-    }
-
-    .reward-desc-box {
-      background: #171720;
-      border: 1px solid #282836;
-      border-radius: 10px;
-      padding: 10px 12px;
-      width: 100%;
-    }
-
-    .reward-desc-title {
-      font-size: 13px;
-      font-weight: 700;
-      color: #ff9d3b;
-      margin-bottom: 4px;
-    }
-
-    .reward-desc-text {
-      font-size: 11px;
-      color: #b0b0c2;
-    }
-
-    @media (max-width: 1020px) {
-      body { padding: 8px; justify-content: flex-start; }
-      .main-wrapper { flex-direction: column; align-items: center; gap: 14px; }
-      .leaderboard-panel, .reward-panel { width: 100%; max-width: 380px; }
+    @media (max-width: 480px) {
       .controls-hint { display: none; }
     }
   </style>
@@ -549,27 +260,6 @@
 <body>
 
   <div class="main-wrapper">
-    <div class="leaderboard-panel">
-      <div class="leaderboard-header">
-        <h3>🏆 Skor Tablosu</h3>
-        <span class="online-badge" id="onlineStatusBadge">
-          <span class="dot"></span>
-          <span id="onlineStatusText">Online</span>
-        </span>
-      </div>
-
-      <div class="active-user-bar">
-        <span>Oynayan:</span>
-        <span class="player-tag" id="activeNickBadge">Giriş Yapılmadı</span>
-      </div>
-      
-      <ul class="leaderboard-list" id="leaderboardList"></ul>
-
-      <div class="panel-footer">
-        <button class="config-server-btn" id="configServerBtn">⚙️ Sunucu Ayarı</button>
-      </div>
-    </div>
-
     <div class="game-container">
       <div class="header">
         <div class="title-box">
@@ -596,12 +286,7 @@
         
         <div id="gameOverlay" class="overlay">
           <h2 id="overlayTitle">🌯 Hatay Zurna Avcısı</h2>
-          <p id="overlayDesc">1. sıraya adını yazdır, sağ köşedeki büyük Zurna Dürüm ödülünü kap!</p>
-          
-          <div class="nick-input-box" id="nickBox">
-            <label for="playerNickInput">Oyuncu Nick Name:</label>
-            <input type="text" id="playerNickInput" placeholder="Örn: Burak" maxlength="12" autocomplete="off">
-          </div>
+          <p id="overlayDesc">En yüksek skoru yapmak için dürümleri topla!</p>
 
           <div class="color-picker-box">
             <span class="color-picker-label">Yılan Rengini Seç:</span>
@@ -635,23 +320,6 @@
         <span>Duraklat: <span class="key-badge">Boşluk</span></span>
       </div>
     </div>
-
-    <div class="reward-panel">
-      <div class="reward-header">
-        <h3>🥇 Birinci Ödülü</h3>
-        <p>Haftanın Şampiyonuna!</p>
-      </div>
-
-      <div class="reward-img-container">
-        <img src="zurna.jpg" alt="Hatay Zurna Dürüm Ödülü" class="reward-img" onerror="this.src='https://images.unsplash.com/photo-1628294895950-9805252327bc?w=600&auto=format&fit=crop&q=80'">
-        <div class="reward-badge-tag">🔥 70 CM ZURNA</div>
-      </div>
-
-      <div class="reward-desc-box">
-        <div class="reward-desc-title">🌯 Bol Soslu Hatay Zurna Dürüm</div>
-        <p class="reward-desc-text">Skor tablosunda 1. sıraya adını yazdır, arkadaşından zurnayı kap!</p>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -665,149 +333,7 @@
     };
 
     let selectedColorKey = localStorage.getItem('snake_chosen_color') || 'kirmizi';
-    let dbUrl = 'https://zurna-oyunu-default-rtdb.firebaseio.com';
-    let db = null;
-    let isDbConnected = false;
-
-    // Basit Küfür / Uygunsuz İsim Filtresi
-    function sanitizeInput(text) {
-      if (!text) return 'Misafir';
-      const clean = text.trim();
-      const forbidden = ['admin', 'http', 'script', 'null', 'undefined'];
-      const lower = clean.toLowerCase();
-      for (let word of forbidden) {
-        if (lower.includes(word)) return 'Oyuncu';
-      }
-      return clean.substring(0, 12);
-    }
-
-    function initCloudDatabase() {
-      try {
-        if (!firebase.apps.length) firebase.initializeApp({ databaseURL: dbUrl });
-        db = firebase.database();
-        
-        // Anonim Kimlik Doğrulama Katmanı
-        firebase.auth().signInAnonymously().then(() => {
-          listenToOnlineScores();
-        }).catch(() => {
-          listenToOnlineScores();
-        });
-      } catch (err) {
-        showLocalFallback('Çevrimdışı');
-      }
-    }
-
-    function listenToOnlineScores() {
-      if (!db) return;
-      const scoresRef = db.ref('zurna_leaderboard');
-      scoresRef.orderByChild('score').limitToLast(10).on('value', (snapshot) => {
-        isDbConnected = true;
-        updateStatusBadge(true);
-        const data = snapshot.val();
-        if (!data) {
-          renderEmptyLeaderboard();
-          return;
-        }
-        const scoresList = Object.keys(data).map(k => data[k]);
-        scoresList.sort((a, b) => b.score - a.score);
-        renderLeaderboard(scoresList);
-      }, () => showLocalFallback('Yerel Mod'));
-    }
-
-    function pushOnlineScore(name, finalScore, colorKey) {
-      const cleanName = sanitizeInput(name);
-      if (!cleanName || finalScore <= 0 || !isDbConnected || !db) return;
-      
-      try {
-        const scoresRef = db.ref('zurna_leaderboard');
-        scoresRef.orderByChild('name').equalTo(cleanName).once('value', (snapshot) => {
-          if (snapshot.exists()) {
-            snapshot.forEach((child) => {
-              if (finalScore > (child.val().score || 0)) {
-                child.ref.update({ score: finalScore, color: colorKey, timestamp: Date.now() });
-              }
-            });
-          } else {
-            scoresRef.push({ name: cleanName, score: finalScore, color: colorKey, timestamp: Date.now() });
-          }
-        });
-      } catch (e) {}
-    }
-
-    function showLocalFallback(statusText) {
-      isDbConnected = false;
-      updateStatusBadge(false, statusText);
-      const localScores = JSON.parse(localStorage.getItem('snake_local_scores') || '[]');
-      if (localScores.length === 0) renderEmptyLeaderboard();
-      else renderLeaderboard(localScores);
-    }
-
-    function updateStatusBadge(online, text = 'Online') {
-      const badge = document.getElementById('onlineStatusBadge');
-      const txt = document.getElementById('onlineStatusText');
-      if (online) {
-        badge.style.color = '#38ef7d';
-        txt.textContent = 'Canlı Online';
-      } else {
-        badge.style.color = '#ffaa00';
-        txt.textContent = text;
-      }
-    }
-
-    function renderLeaderboard(list) {
-      leaderboardList.innerHTML = '';
-      if (!list || list.length === 0) {
-        renderEmptyLeaderboard();
-        highScoreElement.textContent = 0;
-        return;
-      }
-      highScoreElement.textContent = list[0].score;
-      list.forEach((item, index) => {
-        const li = document.createElement('li');
-        li.className = 'leaderboard-item';
-        if (currentNick && item.name.toLowerCase() === currentNick.toLowerCase()) li.classList.add('current-user');
-        
-        let rankSymbol = `#${index + 1}`, rankClass = 'rank-other';
-        if (index === 0) { rankSymbol = '🥇'; rankClass = 'rank-1'; }
-        else if (index === 1) { rankSymbol = '🥈'; rankClass = 'rank-2'; }
-        else if (index === 2) { rankSymbol = '🥉'; rankClass = 'rank-3'; }
-
-        const dotColor = (COLOR_THEMES[item.color] && COLOR_THEMES[item.color].hex) || '#ff7b00';
-        li.innerHTML = `
-          <div class="item-left">
-            <span class="rank-badge ${rankClass}">${rankSymbol}</span>
-            <span class="item-color-dot" style="background:${dotColor}"></span>
-            <span class="item-name">${escapeHtml(item.name)}</span>
-          </div>
-          <span class="item-score">${item.score}</span>
-        `;
-        leaderboardList.appendChild(li);
-      });
-    }
-
-    function renderEmptyLeaderboard() {
-      leaderboardList.innerHTML = `<div class="empty-leaderboard"><span>🌯</span><b>Henüz skor kaydedilmedi!</b></div>`;
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    document.getElementById('configServerBtn').addEventListener('click', () => {
-      const pass = prompt("Sunucu ayarlarını değiştirmek için şifreyi giriniz:");
-      if (pass === "burakaslanL11") {
-        const entered = prompt("Firebase Database URL:", dbUrl);
-        if (entered && entered.trim().startsWith('http')) {
-          dbUrl = entered.trim();
-          localStorage.setItem('snake_db_url', dbUrl);
-          location.reload();
-        }
-      } else if (pass !== null) {
-        alert("Hatalı Şifre! Sunucu ayarlarına erişim reddedildi.");
-      }
-    });
+    let localHighScore = localStorage.getItem('snake_local_highscore') || 0;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function vibrate(pattern = 15) {
@@ -853,10 +379,9 @@
     const overlayTitle = document.getElementById('overlayTitle');
     const overlayDesc = document.getElementById('overlayDesc');
     const startBtn = document.getElementById('startBtn');
-    const playerNickInput = document.getElementById('playerNickInput');
-    const activeNickBadge = document.getElementById('activeNickBadge');
-    const leaderboardList = document.getElementById('leaderboardList');
     const colorOptionsContainer = document.getElementById('colorOptions');
+
+    highScoreElement.textContent = localHighScore;
 
     const GRID_SIZE = 15;
     const TILE_SIZE = canvas.width / GRID_SIZE;
@@ -871,11 +396,6 @@
     let inputQueue = [];
     let durum = { x: 10, y: 7 };
     let score = 0;
-    let currentNick = localStorage.getItem('snake_saved_nick') || '';
-    if (currentNick) {
-      playerNickInput.value = currentNick;
-      activeNickBadge.textContent = currentNick;
-    }
 
     let isRunning = false;
     let isPaused = false;
@@ -1094,11 +614,6 @@
     }
 
     function initGame() {
-      const enteredNick = sanitizeInput(playerNickInput.value);
-      currentNick = enteredNick;
-      localStorage.setItem('snake_saved_nick', currentNick);
-      activeNickBadge.textContent = currentNick;
-
       snake = [{ x: 4, y: 7 }, { x: 3, y: 7 }, { x: 2, y: 7 }];
       direction = { x: 1, y: 0 };
       inputQueue = [];
@@ -1127,11 +642,15 @@
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
       playSound('die');
 
-      pushOnlineScore(currentNick, score, selectedColorKey);
+      if (score > localHighScore) {
+        localHighScore = score;
+        localStorage.setItem('snake_local_highscore', localHighScore);
+        highScoreElement.textContent = localHighScore;
+      }
 
       overlayTitle.textContent = "Dürüm Bitti! 💥";
-      overlayDesc.innerHTML = `Oyuncu: <b>${escapeHtml(currentNick)}</b><br>Skor: <b>${score}</b> | Hız: <b>${speedLevelElement.textContent}</b><br>Online skor tablosuna kaydedildi!`;
-      startBtn.textContent = "Yeni Dürüme Başla";
+      overlayDesc.innerHTML = `Skorun: <b>${score}</b> | En Yüksek: <b>${localHighScore}</b>`;
+      startBtn.textContent = "Yeniden Başla";
       gameOverlay.classList.remove('hidden');
     }
 
@@ -1163,10 +682,6 @@
     }, { passive: true });
 
     window.addEventListener('keydown', (e) => {
-      if (document.activeElement === playerNickInput) {
-        if (e.key === 'Enter') initGame();
-        return;
-      }
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
 
       if (e.key === ' ' || e.code === 'Space') {
@@ -1218,7 +733,6 @@
     setupDpadBtn('btnRight', { x: 1, y: 0 });
 
     setupColorPicker();
-    initCloudDatabase();
     drawGrid();
     drawZurnaDurum(durum.x, durum.y);
   </script>
